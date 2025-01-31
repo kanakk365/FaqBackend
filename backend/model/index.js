@@ -1,40 +1,32 @@
 import mongoose from "mongoose";
 
 const translationSchema = new mongoose.Schema({
-    text: { 
-        type: String, 
-        required: true 
-    }
+  text: { 
+    type: String, 
+    required: true 
+  },
+  _id: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    auto: true 
+  }
 });
 
 const FaqSchema = new mongoose.Schema({
-    question: { 
-        type: String, 
-        required: true 
-    },
-    answer: { 
-        type: String, 
-        required: true 
-    },
-    translations: {
-        type: Object,
-        default: {},
-        validate: {
-            validator: function(translations) {
-                // Validate translation structure
-                const validKeys = Object.keys(translations).every(key => 
-                    key.startsWith('question_') || key.startsWith('answer_')
-                );
-                const validValues = Object.values(translations).every(val => 
-                    val && typeof val.text === 'string'
-                );
-                return validKeys && validValues;
-            },
-            message: 'Invalid translation format'
-        }
-    }
+  question: { 
+    type: String, 
+    required: true 
+  },
+  answer: { 
+    type: String, 
+    required: true 
+  },
+  translations: {
+    type: Map, 
+    of: translationSchema, 
+    default: {} 
+  }
 }, { 
-    timestamps: true 
+  timestamps: true
 });
 
 export default mongoose.model("Faq", FaqSchema);

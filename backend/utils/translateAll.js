@@ -1,20 +1,29 @@
-import translateTextOpenAI from "./translate.js";
-import translate from "./translate.js";
+import translateTextOpenAI from './translate.js';
 
 const translateAll = async ({ question, answer }) => {
     const allTranslations = {};
-    const languages = ['en', 'fr', ];
-    // 'es',  'ru', 'ko', 'hi', 'bn', 'de', 'it', 'pt', 'zh', 'ja'
-
+    const languages = ['en', 'fr']; 
+  
     try {
-        for (const lang of languages) {
-            allTranslations[`question_${lang}`] = await translateTextOpenAI(question, lang);
-            allTranslations[`answer_${lang}`] = await translateTextOpenAI(answer, lang);
-        }
+      
+      if (!question || typeof question !== 'string' || question.trim().length === 0) {
+        throw new Error('Invalid question input');
+      }
+      if (!answer || typeof answer !== 'string' || answer.trim().length === 0) {
+        throw new Error('Invalid answer input');
+      }
+  
+     
+      for (const lang of languages) {
+        allTranslations[`question_${lang}`] = await translateTextOpenAI(question, lang);
+        allTranslations[`answer_${lang}`] = await translateTextOpenAI(answer, lang);
+      }
+  
+      return allTranslations;
     } catch (error) {
-        console.error("Translation error:", error);
+      console.error("Translation error:", error);
+      throw new Error('Failed to translate content');
     }
-
-    return allTranslations;
-};
-export default translateAll;
+  };
+  
+  export default translateAll;
