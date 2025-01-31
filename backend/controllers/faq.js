@@ -87,7 +87,109 @@ const createFaq = async (req, res) => {
     }
 };
 
+const updateFaq = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { question, answer } = req.body;
 
-export { getFaqs, createFaq };
+       
+        if (!question && !answer) {
+            return res.status(400).json({ 
+                message: 'At least one field (question or answer) is required'
+            });
+        }
+
+        
+        const faq = await Faq.findById(id);
+        if (!faq) {
+            return res.status(404).json({ message: 'FAQ not found' });
+        }
+
+      
+        if (question) faq.question = question;
+        if (answer) faq.answer = answer;
+
+        
+        if (question || answer) {
+            const translatedData = await translateAll({ 
+                question: faq.question, 
+                answer: faq.answer 
+            });
+
+            
+            const translations = {};
+            Object.entries(translatedData).forEach(([key, translatedText]) => {
+                translations[key] = {
+                    text: translatedText
+                };
+            });
+            
+            faq.translations = translations;
+        }
+
+        const updatedFaq = await faq.save();
+
+        res.json({
+            success: true,
+            message: 'FAQ updated successfully',
+            faq: {
+                id: updatedFaq._id,
+                question: updatedFaq.question,
+                answer: updatedFaq.answer,
+                translations: updatedFaq.translations,
+                updatedAt: updatedFaq.updatedAt
+            }
+        });
+    } catch (error) {
+        console.error('Error updating FAQ:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error updating FAQ',
+            error: error.message
+        });
+    }
+};
+
+const deleteFaq = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        
+        if (!id) {
+            return res.status(400).json({ message: 'FAQ ID is required' });
+        }
+
+       
+        const deletedFaq = await Faq.findByIdAndDelete(id);
+
+        if (!deletedFaq) {
+            return res.status(404).json({ message: 'FAQ not found' });
+        }
+
+        res.json({
+            success: true,
+            message: 'FAQ deleted successfully',
+            faq: {
+                id: deletedFaq._id,
+                question: deletedFaq.question,
+                answer: deletedFaq.answer
+            }
+        });
+    } catch (error) {
+        console.error('Error deleting FAQ:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error deleting FAQ',
+            error: error.message
+        });
+    }
+};
+
+export { getFaqs, createFaq, updateFaq, deleteFaq };
+
+
+
+
+
 
 
