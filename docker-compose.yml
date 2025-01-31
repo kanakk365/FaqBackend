@@ -29,11 +29,11 @@ services:
     ports:
       - "5000:5000"
     environment:
-      - MONGO_URI=mongodb+srv://kanakkumarmahala000:qvm03FtIs77a9iKz@cluster0.lxxq1.mongodb.net/
+      - MONGO_URI={YOUR_MONGO_URI}
       - PORT=5000
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - OPENAI_API_KEY=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
+      - OPENAI_API_KEY={YOUR_OPENAI_API_KEY}
       - REDIS_URL=redis://redis:6379
     depends_on:
       - redis
