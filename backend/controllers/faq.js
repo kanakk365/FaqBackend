@@ -22,11 +22,7 @@ const sanitizeContent = (html) => sanitizeHtml(html, sanitizeOptions);
 const getFaqs = async (req, res) => {
   try {
     const { lang = 'en' } = req.query;
-    const validLangs = ['en', 'fr', 'es', 'de'];
     
-    if (!validLangs.includes(lang)) {
-      return res.status(400).json({ message: 'Invalid language code' });
-    }
 
     const cacheKey = `faqs:${lang}`;
 
@@ -76,7 +72,7 @@ const createFaq = async (req, res) => {
   try {
     const { question, answer } = req.body;
 
-    
+    // Validate input
     if (!question || typeof question !== 'string' || question.trim().length === 0) {
       return res.status(400).json({ message: 'Question is required and must be a non-empty string' });
     }
@@ -84,11 +80,35 @@ const createFaq = async (req, res) => {
       return res.status(400).json({ message: 'Answer is required and must be a non-empty string' });
     }
 
-    
-    const newFaq = new Faq({ question, answer });
+    // Sanitize input
+    const sanitizedQuestion = question.trim();
+    const sanitizedAnswer = answer.trim();
+
+    // Translate content
+    const translatedData = await translateAll({
+      question: sanitizedQuestion,
+      answer: sanitizedAnswer
+    });
+
+    // Create translations map
+    const translations = new Map();
+    Object.entries(translatedData).forEach(([key, translatedText]) => {
+      translations.set(key, {
+        text: translatedText,
+        _id: new mongoose.Types.ObjectId()
+      });
+    });
+
+    // Create and save FAQ with translations
+    const newFaq = new Faq({
+      question: sanitizedQuestion,
+      answer: sanitizedAnswer,
+      translations: translations
+    });
+
     const savedFaq = await newFaq.save();
 
-   
+    // Invalidate cache for all languages
     const languages = ['en', 'fr', 'es', 'de'];
     for (const lang of languages) {
       await redisClient.del(`faqs:${lang}`);
@@ -97,7 +117,13 @@ const createFaq = async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'FAQ created successfully',
-      faq: savedFaq
+      faq: {
+        id: savedFaq._id,
+        question: savedFaq.question,
+        answer: savedFaq.answer,
+        translations: Object.fromEntries(savedFaq.translations),
+        createdAt: savedFaq.createdAt
+      }
     });
   } catch (error) {
     console.error('Error creating FAQ:', error);

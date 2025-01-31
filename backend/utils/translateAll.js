@@ -2,7 +2,7 @@ import translateTextOpenAI from './translate.js';
 
 const translateAll = async ({ question, answer }) => {
     const allTranslations = {};
-    const languages = ['en', 'fr']; 
+    const languages = ['en', 'fr' , 'hi', 'bn','es', 'de']; 
   
     try {
       

@@ -1,0 +1,60 @@
+version: '3.8'
+services:
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - backend
+
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=example
+    networks:
+      - backend
+
+  backend:
+    build: ./backend
+    container_name: backend
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URI=mongodb+srv://kanakkumarmahala000:qvm03FtIs77a9iKz@cluster0.lxxq1.mongodb.net/
+      - PORT=5000
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - OPENAI_API_KEY=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
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+      - mongo
+    networks:
+      - backend
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - backend
+
+volumes:
+  redis_data:
+  mongo_data:
+
+networks:
+  backend:
+    driver: bridge

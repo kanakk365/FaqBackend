@@ -128,6 +128,8 @@ function Faq() {
         >
           <option value="en">English</option>
           <option value="fr">French</option>
+          <option value="hi">Hindi</option>
+          <option value="bn">Bengali</option>
           <option value="es">Spanish</option>
           <option value="de">German</option>
         </select>
