@@ -1,4 +1,3 @@
-// App.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { routeApi } from '../utils/routeApi';
@@ -6,27 +5,34 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
 const modules = {
-    toolbar: [
-      [{ header: [1, 2, 3, 4, 5, 6, false] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ list: 'ordered' }, { list: 'bullet' }],
-      ['link', 'image'],
-      ['clean'],
-      [{ color: [] }, { background: [] }],
-      ['blockquote', 'code-block'],
-      ['align', { align: [] }],
-    ],
-  };
-  
-  const formats = [
-    'header',
-    'bold', 'italic', 'underline', 'strike',
-    'list', 'bullet',
-    'link', 'image',
-    'color', 'background',
-    'blockquote', 'code-block',
-    'align'
-  ];
+  toolbar: [
+    [{ header: [1, 2, 3, 4, 5, 6, false] }],
+    ['bold', 'italic', 'underline', 'strike'],
+    [{ list: 'ordered' }, { list: 'bullet' }],
+    ['link', 'image'],
+    ['clean'],
+    [{ color: [] }, { background: [] }],
+    ['blockquote', 'code-block'],
+    ['align', { align: [] }],
+  ],
+};
+
+const formats = [
+  'header',
+  'bold', 'italic', 'underline', 'strike',
+  'list', 'bullet',
+  'link', 'image',
+  'color', 'background',
+  'blockquote', 'code-block',
+  'align'
+];
+
+// Utility function to extract text from HTML
+const extractTextFromHTML = (html) => {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  return doc.body.textContent || '';
+};
 
 function Faq() {
   const [faqs, setFaqs] = useState([]);
@@ -53,7 +59,12 @@ function Faq() {
     try {
       setLoading(true);
       const response = await axios.get(routeApi.get, { params: { lang: language } });
-      setFaqs(response.data.faqs);
+      const formattedFaqs = response.data.faqs.map(faq => ({
+        ...faq,
+        question: extractTextFromHTML(faq.question),
+        answer: extractTextFromHTML(faq.answer)
+      }));
+      setFaqs(formattedFaqs);
       setError('');
     } catch (err) {
       setError('Error fetching FAQs');
@@ -157,7 +168,8 @@ function Faq() {
         </div>
       )}
 
-{showCreateModal && (
+      {/* Create Modal */}
+      {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
             <h2 className="text-2xl font-bold mb-4">Create New FAQ</h2>
@@ -188,7 +200,7 @@ function Faq() {
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors z-50"
+                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
@@ -251,7 +263,6 @@ function Faq() {
           </div>
         </div>
       )}
-
     </div>
   );
 }
