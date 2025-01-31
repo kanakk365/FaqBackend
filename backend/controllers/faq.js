@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import translateAll from "../utils/translateAll.js";
 import Faq from "../model/index.js";
-
+import redisClient from '../utils/redisClient.js';
 
 
 import sanitizeHtml from 'sanitize-html';
@@ -17,6 +17,8 @@ const sanitizeOptions = {
 
 const sanitizeContent = (html) => sanitizeHtml(html, sanitizeOptions);
 
+
+
 const getFaqs = async (req, res) => {
   try {
     const { lang = 'en' } = req.query;
@@ -25,6 +27,17 @@ const getFaqs = async (req, res) => {
     if (!validLangs.includes(lang)) {
       return res.status(400).json({ message: 'Invalid language code' });
     }
+
+    const cacheKey = `faqs:${lang}`;
+
+    
+    const cachedData = await redisClient.get(cacheKey);
+
+    if (cachedData) {
+      console.log('Serving from cache');
+      return res.json(JSON.parse(cachedData));
+    }
+
 
     const faqs = await Faq.find().sort({ createdAt: -1 });
 
@@ -37,10 +50,18 @@ const getFaqs = async (req, res) => {
       requestedLanguage: lang
     }));
 
-    res.json({
+    const responseData = {
       faqs: formattedFaqs,
       total: faqs.length
+    };
+
+   
+    await redisClient.set(cacheKey, JSON.stringify(responseData), {
+      EX: 3600, 
     });
+
+    console.log('Serving from database');
+    res.json(responseData);
   } catch (error) {
     console.error('Error fetching FAQs:', error);
     res.status(500).json({ 
@@ -52,68 +73,46 @@ const getFaqs = async (req, res) => {
 
 
 const createFaq = async (req, res) => {
-    try {
-      const { question, answer } = req.body;
-  
-      // Validate input
-      if (!question || typeof question !== 'string' || question.trim().length === 0) {
-        return res.status(400).json({ message: 'Question is required and must be a non-empty string' });
-      }
-      if (!answer || typeof answer !== 'string' || answer.trim().length === 0) {
-        return res.status(400).json({ message: 'Answer is required and must be a non-empty string' });
-      }
-  
-      
-      const sanitizedQuestion = question.trim();
-      const sanitizedAnswer = answer.trim();
-  
-      
-      const translatedData = await translateAll({ question: sanitizedQuestion, answer: sanitizedAnswer });
-  
-      
-      const translations = new Map();
-      Object.entries(translatedData).forEach(([key, translatedText]) => {
-        translations.set(key, {
-          text: translatedText,
-          _id: new mongoose.Types.ObjectId()
-        });
-      });
-  
- 
-      const newFaq = new Faq({
-        question: sanitizedQuestion,
-        answer: sanitizedAnswer,
-        translations
-      });
-  
-      const savedFaq = await newFaq.save();
-  
-      res.status(201).json({
-        success: true,
-        message: 'FAQ created successfully',
-        faq: {
-          id: savedFaq._id,
-          question: savedFaq.question,
-          answer: savedFaq.answer,
-          translations: Object.fromEntries(savedFaq.translations),
-          createdAt: savedFaq.createdAt
-        }
-      });
-    } catch (error) {
-      console.error('Error creating FAQ:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error creating FAQ',
-        error: error.message
-      });
+  try {
+    const { question, answer } = req.body;
+
+    
+    if (!question || typeof question !== 'string' || question.trim().length === 0) {
+      return res.status(400).json({ message: 'Question is required and must be a non-empty string' });
     }
-  };
+    if (!answer || typeof answer !== 'string' || answer.trim().length === 0) {
+      return res.status(400).json({ message: 'Answer is required and must be a non-empty string' });
+    }
+
+    
+    const newFaq = new Faq({ question, answer });
+    const savedFaq = await newFaq.save();
+
+   
+    const languages = ['en', 'fr', 'es', 'de'];
+    for (const lang of languages) {
+      await redisClient.del(`faqs:${lang}`);
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'FAQ created successfully',
+      faq: savedFaq
+    });
+  } catch (error) {
+    console.error('Error creating FAQ:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error creating FAQ',
+      error: error.message
+    });
+  }
+};
 
 const updateFaq = async (req, res) => {
   try {
     const { id } = req.params;
     let { question, answer } = req.body;
-
 
     if (question) question = sanitizeContent(question);
     if (answer) answer = sanitizeContent(answer);
@@ -145,6 +144,12 @@ const updateFaq = async (req, res) => {
     faq.updatedAt = Date.now();
     const updatedFaq = await faq.save();
 
+    
+    const languages = ['en', 'fr', 'es', 'de'];
+    for (const lang of languages) {
+      await redisClient.del(`faqs:${lang}`);
+    }
+
     res.json({
       success: true,
       message: 'FAQ updated successfully',
@@ -166,40 +171,43 @@ const updateFaq = async (req, res) => {
   }
 };
 
-
 const deleteFaq = async (req, res) => {
-    try {
-        const { id } = req.params;
+  try {
+    const { id } = req.params;
 
-        
-        if (!id) {
-            return res.status(400).json({ message: 'FAQ ID is required' });
-        }
-
-       
-        const deletedFaq = await Faq.findByIdAndDelete(id);
-
-        if (!deletedFaq) {
-            return res.status(404).json({ message: 'FAQ not found' });
-        }
-
-        res.json({
-            success: true,
-            message: 'FAQ deleted successfully',
-            faq: {
-                id: deletedFaq._id,
-                question: deletedFaq.question,
-                answer: deletedFaq.answer
-            }
-        });
-    } catch (error) {
-        console.error('Error deleting FAQ:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error deleting FAQ',
-            error: error.message
-        });
+    if (!id) {
+      return res.status(400).json({ message: 'FAQ ID is required' });
     }
+
+    const deletedFaq = await Faq.findByIdAndDelete(id);
+
+    if (!deletedFaq) {
+      return res.status(404).json({ message: 'FAQ not found' });
+    }
+
+    
+    const languages = ['en', 'fr', 'es', 'de'];
+    for (const lang of languages) {
+      await redisClient.del(`faqs:${lang}`);
+    }
+
+    res.json({
+      success: true,
+      message: 'FAQ deleted successfully',
+      faq: {
+        id: deletedFaq._id,
+        question: deletedFaq.question,
+        answer: deletedFaq.answer
+      }
+    });
+  } catch (error) {
+    console.error('Error deleting FAQ:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting FAQ',
+      error: error.message
+    });
+  }
 };
 
 export { getFaqs, createFaq, updateFaq, deleteFaq };

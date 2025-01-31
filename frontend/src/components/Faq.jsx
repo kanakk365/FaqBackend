@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import  { useState, useEffect } from 'react';
 import axios from 'axios';
 import { routeApi } from '../utils/routeApi';
 import ReactQuill from 'react-quill';
@@ -27,7 +27,7 @@ const formats = [
   'align'
 ];
 
-// Utility function to extract text from HTML
+
 const extractTextFromHTML = (html) => {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
@@ -66,8 +66,8 @@ function Faq() {
       }));
       setFaqs(formattedFaqs);
       setError('');
-    } catch (err) {
-      setError('Error fetching FAQs');
+    } catch (err ) {
+      setError('Error fetching FAQs' + err);
     } finally {
       setLoading(false);
     }
@@ -81,7 +81,7 @@ function Faq() {
       setFormData({ question: '', answer: '' });
       fetchFaqs();
     } catch (err) {
-      setError('Error creating FAQ');
+      setError('Error creating FAQ' + err);
     }
   };
 
@@ -92,7 +92,7 @@ function Faq() {
       setShowEditModal(false);
       fetchFaqs();
     } catch (err) {
-      setError('Error updating FAQ');
+      setError('Error updating FAQ' + err);
     }
   };
 
@@ -102,7 +102,7 @@ function Faq() {
         await axios.delete(`${routeApi.delete}/${id}`);
         fetchFaqs();
       } catch (err) {
-        setError('Error deleting FAQ');
+        setError('Error deleting FAQ' + err);
       }
     }
   };
@@ -200,7 +200,7 @@ function Faq() {
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors z-50"
                 >
                   Cancel
                 </button>
