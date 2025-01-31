@@ -57,7 +57,7 @@ const getFaqs = async (req, res) => {
     });
 
     console.log('Serving from database');
-    res.json(responseData);
+    res.status(201).json(responseData);
   } catch (error) {
     console.error('Error fetching FAQs:', error);
     res.status(500).json({ 
@@ -90,7 +90,7 @@ const createFaq = async (req, res) => {
       answer: sanitizedAnswer
     });
 
-    // Create translations map
+   
     const translations = new Map();
     Object.entries(translatedData).forEach(([key, translatedText]) => {
       translations.set(key, {
@@ -99,7 +99,7 @@ const createFaq = async (req, res) => {
       });
     });
 
-    // Create and save FAQ with translations
+    
     const newFaq = new Faq({
       question: sanitizedQuestion,
       answer: sanitizedAnswer,
@@ -108,7 +108,7 @@ const createFaq = async (req, res) => {
 
     const savedFaq = await newFaq.save();
 
-    // Invalidate cache for all languages
+   
     const languages = ['en', 'fr', 'es', 'de'];
     for (const lang of languages) {
       await redisClient.del(`faqs:${lang}`);
