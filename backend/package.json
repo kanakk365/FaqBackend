@@ -11,6 +11,7 @@
     "googletrans": "^1.0.21",
     "mongoose": "^8.9.5",
     "nodemon": "^3.1.9",
+    "openai": "^4.81.0",
     "redis": "^4.7.0"
   },
   "type": "module",

@@ -1,12 +1,12 @@
 import express from "express"
-import { createFaq, getFaqs } from "../controllers/faq"
+import { createFaq, getFaqs } from "../controllers/faq.js"
 
 const router  = express.Router()
 
 router.get("/faqs", getFaqs )
 router.post("/faqs", createFaq )
-router.put("/faqs/:id", updataFaq )
-router.delete("/faqs/:id", deleteFaq )
+// router.put("/faqs/:id", updataFaq )
+// router.delete("/faqs/:id", deleteFaq )
 
 
 export default router

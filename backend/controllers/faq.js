@@ -1,72 +1,93 @@
-import translateText from "../utils/translate";
-import translateAll from "../utils/translateAll";
+import mongoose from 'mongoose';
+import translateAll from "../utils/translateAll.js";
 import Faq from "../model/index.js";
 
 
 
 const getFaqs = async (req, res) => {
     try {
+        const { lang = 'en' } = req.query;
+        const validLangs = ['en', 'fr', 'es', 'de'];
         
-        const language = req.query.language || 'en';
-        
-        
-        const faqs = await Faq.find();
+        if (!validLangs.includes(lang)) {
+            return res.status(400).json({ message: 'Invalid language code' });
+        }
 
-       
-        const translatedFaqs = faqs.map(faq => {
-            
-            const translation = faq.translations[language];
-            
-           
-            return translation
-                ? { question: translation.question, answer: translation.answer }
-                : { question: faq.question, answer: faq.answer }; 
-        });
+        const faqs = await Faq.find()
+            .sort({ createdAt: -1 });
 
-        res.status(200).json({
-            faqs: translatedFaqs,
+        const formattedFaqs = faqs.map(faq => ({
+            id: faq._id,
+            question: faq.translations[`question_${lang}`]?.text || faq.question,
+            answer: faq.translations[`answer_${lang}`]?.text || faq.answer,
+            createdAt: faq.createdAt,
+            originalLanguage: 'en',
+            requestedLanguage: lang
+        }));
+
+        res.json({
+            faqs: formattedFaqs,
+            total: faqs.length
         });
     } catch (error) {
-        console.error("Error fetching FAQs:", error);
-        res.status(500).json({
-            message: "An error occurred while fetching the FAQs.",
-            error: error.message,
+        console.error('Error fetching FAQs:', error);
+        res.status(500).json({ 
+            message: 'Error fetching FAQs',
+            error: error.message 
         });
     }
 };
 
-
-
 const createFaq = async (req, res) => {
     try {
-        // Get the question and answer from the request body
         const { question, answer } = req.body;
+        
+        if (!question || !answer) {
+            return res.status(400).json({ message: 'Question and answer are required' });
+        }
 
-        // Create a new FAQ instance and save it
-        const translations = await translateAll(req.body);
+       
+        const translatedData = await translateAll({ question, answer });
+        
+        
+        const translations = {};
+        Object.entries(translatedData).forEach(([key, translatedText]) => {
+            translations[key] = {
+                text: translatedText,
+                _id: new mongoose.Types.ObjectId()
+            };
+        });
 
         const newFaq = new Faq({
             question,
             answer,
-            translations// You can leave this empty or add default translations
+            translations
         });
 
-        await newFaq.save();
+        const savedFaq = await newFaq.save();
 
         res.status(201).json({
-            message: 'FAQ created successfully!',
-            faq: newFaq,
+            success: true,
+            message: 'FAQ created successfully',
+            faq: {
+                id: savedFaq._id,
+                question: savedFaq.question,
+                answer: savedFaq.answer,
+                translations: savedFaq.translations,
+                createdAt: savedFaq.createdAt
+            }
         });
     } catch (error) {
-        console.error("Error creating FAQ:", error);
+        console.error('Error creating FAQ:', error);
         res.status(500).json({
-            message: "An error occurred while creating the FAQ.",
-            error: error.message,
+            success: false,
+            message: 'Error creating FAQ',
+            error: error.message
         });
     }
 };
 
 
+export { getFaqs, createFaq };
 
 
-export { getFaqs, createFaq }
