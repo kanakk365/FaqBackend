@@ -4,7 +4,9 @@
 A comprehensive system for managing FAQs with multi-language support, real-time caching, and AI-powered translations.
 
 # Demo 
-
+```bash
+https://youtu.be/DgjbK07rlXY
+```
 
 ## Features ✨
 - Multi-language Support (Auto-translation via OpenAI)
