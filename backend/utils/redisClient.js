@@ -2,7 +2,7 @@
 import { createClient } from 'redis';
 
 const redisClient = createClient({
-  url:  'redis://localhost:6379',
+  url:  'redis-17980.c16.us-east-1-3.ec2.redns.redis-cloud.com:17980',
 });
 
 redisClient.on('error', (err) => {
