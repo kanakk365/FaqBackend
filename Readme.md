@@ -4,9 +4,7 @@
 A comprehensive system for managing FAQs with multi-language support, real-time caching, and AI-powered translations.
 
 # Demo 
-```bash
-https://youtu.be/DgjbK07rlXY
-```
+
 
 ## Features ✨
 - Multi-language Support (Auto-translation via OpenAI)
@@ -22,7 +20,7 @@ https://youtu.be/DgjbK07rlXY
 # Frontend
 
 
-## Installation
+![alt text](https://res.cloudinary.com/di32agr2l/image/upload/v1738370118/bdiiehw7mwttni3aqcmx.png)
 
 
 ## Install dependencies
