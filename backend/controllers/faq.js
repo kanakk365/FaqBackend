@@ -72,7 +72,7 @@ const createFaq = async (req, res) => {
   try {
     const { question, answer } = req.body;
 
-    // Validate input
+  
     if (!question || typeof question !== 'string' || question.trim().length === 0) {
       return res.status(400).json({ message: 'Question is required and must be a non-empty string' });
     }
@@ -80,11 +80,11 @@ const createFaq = async (req, res) => {
       return res.status(400).json({ message: 'Answer is required and must be a non-empty string' });
     }
 
-    // Sanitize input
+   
     const sanitizedQuestion = question.trim();
     const sanitizedAnswer = answer.trim();
 
-    // Translate content
+  
     const translatedData = await translateAll({
       question: sanitizedQuestion,
       answer: sanitizedAnswer
@@ -109,7 +109,7 @@ const createFaq = async (req, res) => {
     const savedFaq = await newFaq.save();
 
    
-    const languages = ['en', 'fr', 'es', 'de'];
+    const languages = ['hi', 'bn', 'en', 'fr', 'es', 'de'];
     for (const lang of languages) {
       await redisClient.del(`faqs:${lang}`);
     }
